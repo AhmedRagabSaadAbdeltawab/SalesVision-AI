@@ -1,0 +1,68 @@
+
+================================================================================
+SARIMAX FORECASTING & MARKET BASKET ANALYSIS PIPELINE - DOCUMENTATION
+================================================================================
+
+1. PROJECT OVERVIEW
+-------------------
+A production-ready data science pipeline designed to predict future sales and 
+discover product associations (Cross-Selling) for retail businesses.
+
+2. KEY FUNCTIONS EXPLAINED
+--------------------------
+
+A. __init__(forecast_horizon, order, seasonal_order)
+   - What it does: Initializes the model's brain.
+   - Parameters:
+     * forecast_horizon: Number of months to predict (e.g., 3 months).
+     * order (p,d,q): Settings for the data trend.
+     * seasonal_order (P,D,Q,s): Settings for yearly cycles (Seasonality).
+
+B. load_data(sales_path, products_path, calendar_path, combined_path)
+   - What it does: Reads and merges data.
+   - Parameters: Paths to your CSV files. It automatically links Sales, Products, 
+     and Calendar information into one table.
+
+C. preprocess_data(data)
+   - What it does: Cleans the "dirty" data.
+   - Action: It removes duplicates, fills missing values, and fixes "Outliers" 
+     (extreme values) so they don't break the model.
+
+D. engineer_features(monthly_data)
+   - What it does: Creates "clues" (features) for the model.
+   - Action: It calculates things like "Sales from last month" (Lags) and 
+     "Average of last 3 months" (Rolling Mean) to improve accuracy.
+
+E. train_sarimax(monthly_data, validate=True)
+   - What it does: Learns from history.
+   - Action: If validate is True, it tests itself against the last 3 months to 
+     calculate errors (MAE, RMSE) before finalizing.
+
+F. forecast_future(monthly_data, steps)
+   - What it does: Predicts the future.
+   - Result: Gives you the expected sales and "Confidence Intervals" (Upper/Lower range).
+
+G. get_cross_selling_recommendations(clean_data, min_support)
+   - What it does: Finds product pairs that are bought together.
+   - Parameter (min_support): The minimum frequency a pair must appear (e.g., 2%).
+   - Strategy: It analyzes the last year of data to suggest which products to 
+     display side-by-side.
+
+H. generate_business_insights()
+   - What it does: Converts math into business advice.
+   - Action: Suggests increasing stock for high-demand months or reducing it 
+     for slow months.
+
+I. save_pipeline(filename)
+   - What it does: Saves all your hard work into a file (.pkl) so you can use 
+     it later without retraining.
+
+3. WORKFLOW SUMMARY
+-------------------
+1. Initialize -> 2. Load -> 3. Clean -> 4. Feature Engineering -> 5. Train -> 
+6. Forecast -> 7. Get Cross-Selling Tips -> 8. Save.
+
+================================================================================
+Prepared by: Senior Data Science Team (Ziad & Omaima)
+Date: February 2026
+================================================================================
