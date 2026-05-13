@@ -5,3 +5,5 @@ statsmodels
 scikit-learn
 numpy
 python-multipart
+matplotlib
+seaborn
