@@ -3,7 +3,7 @@ title: SalesVision AI API
 emoji: 🚀
 colorFrom: blue
 colorTo: purple
-sdk: docker
+sdk: gradio
 app_file: app.py
 pinned: false
 ---
