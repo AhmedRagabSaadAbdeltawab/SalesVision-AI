@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Push to Hugging Face
+      - name: Deploy to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -22,11 +22,20 @@ jobs:
 
           git clone https://AhmedRagabSaad:$HF_TOKEN@huggingface.co/spaces/AhmedRagabSaad/SalesVision-AI-Demo space
 
-          rsync -av --exclude '.git' ./ space/
+          rsync -av \
+            --exclude '.git' \
+            --exclude 'space' \
+            --exclude '__pycache__' \
+            --exclude '*.pyc' \
+            --exclude '.coverage' \
+            --exclude '*.csv' \
+            --exclude '.github' \
+            ./ space/
 
           cd space
 
           git add .
-          git commit -m "Auto deploy" || echo "No changes"
+
+          git commit -m "Auto deploy from GitHub" || echo "No changes to commit"
 
           git push
