@@ -49,38 +49,43 @@ async def predict(
             data = data.merge(df_calendar, on='Date', how='left')
         
         else:
+            # ✅ التعديل: HTTPException لازم تترمي برا الـ try
             raise HTTPException(status_code=400, detail="Please upload 1 combined file or 3 separate files")
 
         # 3. تنفيذ خطوات الـ Pipeline
-        if data is not None:
-            clean_data = pipeline.preprocess_data(data)
-            monthly_data = pipeline.aggregate_to_monthly(clean_data)
-            feat_data = pipeline.engineer_features(monthly_data)
-            
-            # تدريب الـ model
-            pipeline.train_sarimax(feat_data, validate=False)
-            
-            # حساب التوقعات
-            forecast = pipeline.forecast_future(feat_data, steps=forecast_steps)
-            
-            # Inventory Insights
-            inventory_alerts = pipeline.generate_business_insights()
+        clean_data = pipeline.preprocess_data(data)
+        monthly_data = pipeline.aggregate_to_monthly(clean_data)
+        feat_data = pipeline.engineer_features(monthly_data)
+        
+        # تدريب الـ model
+        pipeline.train_sarimax(feat_data, validate=False)
+        
+        # حساب التوقعات
+        forecast = pipeline.forecast_future(feat_data, steps=forecast_steps)
+        
+        # Inventory Insights
+        inventory_alerts = pipeline.generate_business_insights()
 
-            # استخراج علاقات من المنتجات وبعض (cross-selling)
-            cross_selling = pipeline.get_cross_selling_recommendations(min_support=0.02,clean_data=clean_data) 
-            result_package = {
-                "forecast": forecast.to_dict(orient='records'),
-                "historical": monthly_data.reset_index().to_dict(orient='records'),
-                "inventory_alerts": inventory_alerts,
-                "cross_selling_recommendations": cross_selling,
-                "model_residuals": {
-                    
-                    "residuals": pipeline.model_fit.resid.tolist()[:100] # نبعت اول 100 بس عشان ال size
-                }
+        # استخراج علاقات من المنتجات وبعض (cross-selling)
+        cross_selling = pipeline.get_cross_selling_recommendations(min_support=0.02, clean_data=clean_data)
+
+        result_package = {
+            "forecast": forecast.to_dict(orient='records'),
+            "historical": monthly_data.reset_index().to_dict(orient='records'),
+            "inventory_alerts": inventory_alerts,
+            "cross_selling_recommendations": cross_selling,
+            "model_residuals": {
+                "residuals": pipeline.model_fit.resid.tolist()[:100]
             }
-            return result_package
+        }
+        return result_package
+
+    except HTTPException:
+        # ✅ التعديل: خلي الـ HTTPException تعدي زي ما هي عشان FastAPI يبعتها صح
+        raise
 
     except Exception as e:
+        # باقي الأخطاء بترجع 500
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 if __name__ == '__main__':
