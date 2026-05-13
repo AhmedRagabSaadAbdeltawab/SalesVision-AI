@@ -1,0 +1,32 @@
+name: Deploy to Hugging Face
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "github-actions"
+
+          git clone https://AhmedRagabSaad:$HF_TOKEN@huggingface.co/spaces/AhmedRagabSaad/SalesVision-AI-Demo space
+
+          rsync -av --exclude '.git' ./ space/
+
+          cd space
+
+          git add .
+          git commit -m "Auto deploy" || echo "No changes"
+
+          git push
