@@ -1,1 +1,9 @@
-# SalesVision-AI
+---
+title: SalesVision AI API
+emoji: 🚀
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_file: app.py
+pinned: false
+---
