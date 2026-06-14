@@ -74,9 +74,9 @@ async def predict(
             "historical": monthly_data.reset_index().to_dict(orient='records'),
             "inventory_alerts": inventory_alerts,
             "cross_selling_recommendations": cross_selling,
-            "model_residuals": {
-                "residuals": pipeline.model_fit.resid.tolist()[:100]
-            }
+            # "model_residuals": {
+            #     "residuals": pipeline.model_fit.resid.tolist()[:100]
+            # }
         }
         return result_package
 
