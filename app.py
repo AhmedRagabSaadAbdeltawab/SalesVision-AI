@@ -87,6 +87,50 @@ async def predict(
     except Exception as e:
         # باقي الأخطاء بترجع 500
         return JSONResponse(status_code=500, content={"error": str(e)})
+@app.post("/plot/trend")
+async def get_plot_trend(
+    combined: Optional[UploadFile]= File(None),
+    sales: Optional[UploadFile] = File(None),
+    products: Optional[UploadFile] = File(None),
+    calendar: Optional[UploadFile] = File(None)
+):
+    try:
+        data = await process_uploaded_files(combined, sales, products, calendar)
+        clean_data = pipeline.preprocess_data(data)
+        monthly_data = pipeline.aggregate_to_monthly(clean_data)
+        # عمل Decomposition للداتا التاريخية
+        decomp = seasonal_decompose(monthly_data['Sales'], model='additive', period=12)
+        df_trend = pd.DataFrame({
+            'Date': decomp.trend.index.strftime('%Y-%m'),
+            'Trend': decomp.trend.values
+        }).dropna()
+        return df_trend.to_dict(orient='records')
+    except HTTPException:
+        raise
+    except Exception as e:
+        return JSONResponse(status_code=500, content={f"Failed to compute trend: {str(e)}"})
+@app.post("/plot/seasonality")
+async def get_plot_seasonality(
+    combined: Optional[UploadFile]= File(None),
+    sales: Optional[UploadFile] = File(None),
+    products: Optional[UploadFile] = File(None),
+    calendar: Optional[UploadFile] = File(None)
+):
+    try:
+        data = await process_uploaded_files(combined, sales, products, calendar)
+        clean_data = pipeline.preprocess_data(data)
+        # عمل Decomposition للداتا التاريخية
+        decomp = seasonal_decompose(clean_data['Sales'], model='additive', period=12)
+        df_seasonality = pd.DataFrame({
+            'Date': decomp.seasonal.index.strftime('%Y-%m'),
+            'Seasonality': decomp.seasonal.values
+        }).dropna()
+        return df_seasonality.to_dict(orient='records')
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        return JSONResponse(status_code=500, content={f"Failed to compute seasonality: {str(e)}"})
 
 if __name__ == '__main__':
     import uvicorn
