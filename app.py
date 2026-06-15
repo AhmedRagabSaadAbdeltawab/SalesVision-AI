@@ -87,6 +87,8 @@ async def predict(
     except Exception as e:
         # باقي الأخطاء بترجع 500
         return JSONResponse(status_code=500, content={"error": str(e)})
+    
+    
 @app.post("/plot/trend")
 async def get_plot_trend(
     combined: Optional[UploadFile]= File(None),
