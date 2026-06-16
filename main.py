@@ -89,6 +89,7 @@ async def predict(
         # باقي الأخطاء بترجع 500
         return JSONResponse(status_code=500, content={"error": str(e)})
     
+    
 @app.post("/plot/trend")
 async def get_plot_trend(
     combined: Optional[UploadFile]= File(None),
@@ -100,12 +101,16 @@ async def get_plot_trend(
         data = await process_uploaded_files(combined, sales, products, calendar)
         clean_data = pipeline.preprocess_data(data)
         monthly_data = pipeline.aggregate_to_monthly(clean_data)
-        monthly_data.index = pd.to_datetime(monthly_data.index)
+
+        monthly_data['Date'] = pd.to_datetime(monthly_data['Date'])
+        monthly_data = monthly_data.set_index('Date')
+
         decomp = seasonal_decompose(monthly_data['Sales'], model='additive', period=12)
+        trend_series = decomp.trend.dropna()
         df_trend = pd.DataFrame({
-            'Date': decomp.trend.index.strftime('%Y-%m'),
-            'Trend': decomp.trend.values
-        }).dropna()
+            'Date': trend_series.index.strftime('%Y-%m'),
+            'Trend': trend_series.values
+        })
         return df_trend.to_dict(orient='records')
     except HTTPException:
         raise
@@ -124,12 +129,16 @@ async def get_plot_seasonality(
         data = await process_uploaded_files(combined, sales, products, calendar)
         clean_data = pipeline.preprocess_data(data)
         monthly_data = pipeline.aggregate_to_monthly(clean_data)
-        monthly_data.index = pd.to_datetime(monthly_data.index)
+
+        monthly_data['Date'] = pd.to_datetime(monthly_data['Date'])
+        monthly_data = monthly_data.set_index('Date')
+        
         decomp = seasonal_decompose(monthly_data['Sales'], model='additive', period=12)
+        seasonal_series = decomp.seasonal.dropna()
         df_seasonality = pd.DataFrame({
-            'Date': decomp.seasonal.index.strftime('%Y-%m'),
-            'Seasonality': decomp.seasonal.values
-        }).dropna()
+            'Date': seasonal_series.index.strftime('%Y-%m'),
+            'Seasonality': seasonal_series.values
+        })
         return df_seasonality.to_dict(orient='records')
     except HTTPException:
         raise
@@ -163,6 +172,7 @@ async def process_uploaded_files(combined, sales, products, calendar):
             status_code=400,
             detail="Please upload 1 combined file or 3 separate files"
         )
+    
 
 if __name__ == '__main__':
     import uvicorn
