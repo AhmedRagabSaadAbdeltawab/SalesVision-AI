@@ -112,7 +112,6 @@ async def get_plot_trend(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-
 @app.post("/plot/seasonality")
 async def get_plot_seasonality(
     combined: Optional[UploadFile]= File(None),
