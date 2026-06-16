@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
-from statsmodels.tsa.seasonal import seasonal_decompose
 import pandas as pd
 import io
 from typing import Optional
@@ -80,7 +79,7 @@ async def predict(
             # }
         }
         return result_package
-
+    
     except HTTPException:
         # ✅ التعديل: خلي الـ HTTPException تعدي زي ما هي عشان FastAPI يبعتها صح
         raise
@@ -88,7 +87,6 @@ async def predict(
     except Exception as e:
         # باقي الأخطاء بترجع 500
         return JSONResponse(status_code=500, content={"error": str(e)})
-    
 @app.post("/plot/trend")
 async def get_plot_trend(
     combined: Optional[UploadFile]= File(None),
@@ -100,7 +98,7 @@ async def get_plot_trend(
         data = await process_uploaded_files(combined, sales, products, calendar)
         clean_data = pipeline.preprocess_data(data)
         monthly_data = pipeline.aggregate_to_monthly(clean_data)
-        monthly_data.index = pd.to_datetime(monthly_data.index)
+        # عمل Decomposition للداتا التاريخية
         decomp = seasonal_decompose(monthly_data['Sales'], model='additive', period=12)
         df_trend = pd.DataFrame({
             'Date': decomp.trend.index.strftime('%Y-%m'),
@@ -110,8 +108,7 @@ async def get_plot_trend(
     except HTTPException:
         raise
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
+        return JSONResponse(status_code=500, content={f"Failed to compute trend: {str(e)}"})
 @app.post("/plot/seasonality")
 async def get_plot_seasonality(
     combined: Optional[UploadFile]= File(None),
@@ -123,48 +120,18 @@ async def get_plot_seasonality(
         data = await process_uploaded_files(combined, sales, products, calendar)
         clean_data = pipeline.preprocess_data(data)
         monthly_data = pipeline.aggregate_to_monthly(clean_data)
-        monthly_data.index = pd.to_datetime(monthly_data.index)
+        # عمل Decomposition للداتا التاريخية
         decomp = seasonal_decompose(monthly_data['Sales'], model='additive', period=12)
         df_seasonality = pd.DataFrame({
             'Date': decomp.seasonal.index.strftime('%Y-%m'),
             'Seasonality': decomp.seasonal.values
         }).dropna()
         return df_seasonality.to_dict(orient='records')
+    
     except HTTPException:
         raise
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-import pandas as pd
-import io
-from fastapi import HTTPException
-
-async def process_uploaded_files(combined, sales, products, calendar):
-    if combined:
-        content = await combined.read()
-        return pd.read_csv(io.BytesIO(content))
-
-    elif sales and products and calendar:
-        sales_content = await sales.read()
-        products_content = await products.read()
-        calendar_content = await calendar.read()
-
-        df_sales = pd.read_csv(io.BytesIO(sales_content))
-        df_products = pd.read_csv(io.BytesIO(products_content))
-        df_calendar = pd.read_csv(io.BytesIO(calendar_content))
-
-        df_sales['Date'] = pd.to_datetime(df_sales['Date'])
-        df_calendar['Date'] = pd.to_datetime(df_calendar['Date'])
-
-        data = df_sales.merge(df_products, on='Product_ID', how='left')
-        data = data.merge(df_calendar, on='Date', how='left')
-        return data
-
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Please upload 1 combined file or 3 separate files"
-        )
+        return JSONResponse(status_code=500, content={f"Failed to compute seasonality: {str(e)}"})
 
 if __name__ == '__main__':
     import uvicorn
