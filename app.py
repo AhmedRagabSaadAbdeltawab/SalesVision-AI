@@ -27,6 +27,7 @@ async def predict(
         if combined:
             print("Processing combined file....")
             content = await combined.read()
+            await combined.seek(0)  # رجع المؤشر لبداية الملف لو حبيت تقرأه تاني
             data = pd.read_csv(io.BytesIO(content))
         
         # 2. معالجة الـ 3 ملفات المنفصلة
@@ -40,6 +41,10 @@ async def predict(
             df_sales = pd.read_csv(io.BytesIO(sales_content))
             df_products = pd.read_csv(io.BytesIO(products_content))
             df_calendar = pd.read_csv(io.BytesIO(calendar_content))
+
+            await sales.seek(0)
+            await products.seek(0)
+            await calendar.seek(0)
 
             # التحويل والدمج
             df_sales['Date'] = pd.to_datetime(df_sales['Date'])
@@ -119,8 +124,9 @@ async def get_plot_seasonality(
     try:
         data = await process_uploaded_files(combined, sales, products, calendar)
         clean_data = pipeline.preprocess_data(data)
+        monthly_data = pipeline.aggregate_to_monthly(clean_data)
         # عمل Decomposition للداتا التاريخية
-        decomp = seasonal_decompose(clean_data['Sales'], model='additive', period=12)
+        decomp = seasonal_decompose(monthly_data['Sales'], model='additive', period=12)
         df_seasonality = pd.DataFrame({
             'Date': decomp.seasonal.index.strftime('%Y-%m'),
             'Seasonality': decomp.seasonal.values
