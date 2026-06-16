@@ -27,7 +27,7 @@ async def predict(
         if combined:
             print("Processing combined file....")
             content = await combined.read()
-            await combined.seek(0)  # رجع المؤشر لبداية الملف لو حبيت تقرأه تاني
+            # await combined.seek(0)  # رجع المؤشر لبداية الملف لو حبيت تقرأه تاني
             data = pd.read_csv(io.BytesIO(content))
         
         # 2. معالجة الـ 3 ملفات المنفصلة
@@ -42,9 +42,9 @@ async def predict(
             df_products = pd.read_csv(io.BytesIO(products_content))
             df_calendar = pd.read_csv(io.BytesIO(calendar_content))
 
-            await sales.seek(0)
-            await products.seek(0)
-            await calendar.seek(0)
+            # await sales.seek(0)
+            # await products.seek(0)
+            # await calendar.seek(0)
 
             # التحويل والدمج
             df_sales['Date'] = pd.to_datetime(df_sales['Date'])
