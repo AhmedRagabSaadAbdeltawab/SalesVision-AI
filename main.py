@@ -136,9 +136,6 @@ async def get_plot_seasonality(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-import pandas as pd
-import io
-from fastapi import HTTPException
 
 async def process_uploaded_files(combined, sales, products, calendar):
     if combined:
